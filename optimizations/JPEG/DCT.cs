@@ -5,11 +5,11 @@ namespace JPEG
 {
 	public class DCT
 	{
-		public static double[,] DCT2D(double[,] input)
+		public static float[,] DCT2D(float[,] input)
 		{
 			var height = input.GetLength(0);
 			var width = input.GetLength(1);
-			var coeffs = new double[width, height];
+			var coeffs = new float[width, height];
 
 			MathEx.LoopByTwoVariables(
 				0, width,
@@ -28,7 +28,7 @@ namespace JPEG
 			return coeffs;
 		}
 
-		public static void IDCT2D(double[,] coeffs, double[,] output)
+		public static void IDCT2D(float[,] coeffs, float[,] output)
 		{
 			for(var x = 0; x < coeffs.GetLength(1); x++)
 			{
@@ -45,24 +45,24 @@ namespace JPEG
 			}
 		}
 
-		public static double BasisFunction(double a, double u, double v, double x, double y, int height, int width)
+		public static float BasisFunction(float a, float u, float v, float x, float y, int height, int width)
 		{
-			var b = Math.Cos(((2d * x + 1d) * u * Math.PI) / (2 * width));
-			var c = Math.Cos(((2d * y + 1d) * v * Math.PI) / (2 * height));
+			var b = (float)Math.Cos(((2f * x + 1f) * u * (float)Math.PI) / (2f * width));
+			var c = (float)Math.Cos(((2f * y + 1f) * v * (float)Math.PI) / (2f * height));
 
 			return a * b * c;
 		}
 
-		private static double Alpha(int u)
+		private static float Alpha(int u)
 		{
 			if(u == 0)
-				return 1 / Math.Sqrt(2);
-			return 1;
+				return 1f / (float)Math.Sqrt(2);
+			return 1f;
 		}
 
-		private static double Beta(int height, int width)
+		private static float Beta(int height, int width)
 		{
-			return 1d / width + 1d / height;
+			return 1f / width + 1f / height;
 		}
 	}
 }

@@ -62,7 +62,7 @@ namespace JPEG
 			{
 				for(var x = 0; x < matrix.Width; x += DCTSize)
 				{
-					foreach (var selector in new Func<Pixel, double>[] {p => p.Y, p => p.Cb, p => p.Cr})
+					foreach (var selector in new Func<Pixel, float>[] {p => p.Y, p => p.Cb, p => p.Cr})
 					{
 						var subMatrix = GetSubMatrix(matrix, y, DCTSize, x, DCTSize, selector);
 						ShiftMatrixValues(subMatrix, -128);
@@ -91,9 +91,9 @@ namespace JPEG
 				{
 					for (var x = 0; x < image.Width; x += DCTSize)
 					{
-						var _y = new double[DCTSize, DCTSize];
-						var cb = new double[DCTSize, DCTSize];
-						var cr = new double[DCTSize, DCTSize];
+						var _y = new float[DCTSize, DCTSize];
+						var cb = new float[DCTSize, DCTSize];
+						var cr = new float[DCTSize, DCTSize];
 						foreach (var channel in new []{_y, cb, cr})
 						{
 							var quantizedBytes = new byte[DCTSize * DCTSize];
@@ -111,7 +111,7 @@ namespace JPEG
 			return result;
 		}
 
-		private static void ShiftMatrixValues(double[,] subMatrix, int shiftValue)
+		private static void ShiftMatrixValues(float[,] subMatrix, int shiftValue)
 		{
 			var height = subMatrix.GetLength(0);
 			var width = subMatrix.GetLength(1);
@@ -121,7 +121,7 @@ namespace JPEG
 					subMatrix[y, x] = subMatrix[y, x] + shiftValue;
 		}
 
-		private static void SetPixels(Matrix matrix, double[,] a, double[,] b, double[,] c, PixelFormat format, int yOffset, int xOffset)
+		private static void SetPixels(Matrix matrix, float[,] a, float[,] b, float[,] c, PixelFormat format, int yOffset, int xOffset)
 		{
 			var height = a.GetLength(0);
 			var width = a.GetLength(1);
@@ -131,9 +131,9 @@ namespace JPEG
 					matrix.Pixels[yOffset + y, xOffset + x] = new Pixel(a[y, x], b[y, x], c[y, x], format);
 		}
 
-		private static double[,] GetSubMatrix(Matrix matrix, int yOffset, int yLength, int xOffset, int xLength, Func<Pixel, double> componentSelector)
+		private static float[,] GetSubMatrix(Matrix matrix, int yOffset, int yLength, int xOffset, int xLength, Func<Pixel, float> componentSelector)
 		{
-			var result = new double[yLength, xLength];
+			var result = new float[yLength, xLength];
 			for(var j = 0; j < yLength; j++)
 				for(var i = 0; i < xLength; i++)
 					result[j, i] = componentSelector(matrix.Pixels[yOffset + j, xOffset + i]);
@@ -170,7 +170,7 @@ namespace JPEG
 			};
 		}
 
-		private static byte[,] Quantize(double[,] channelFreqs, int quality)
+		private static byte[,] Quantize(float[,] channelFreqs, int quality)
 		{
 			var result = new byte[channelFreqs.GetLength(0), channelFreqs.GetLength(1)];
 
@@ -186,9 +186,9 @@ namespace JPEG
 			return result;
 		}
 
-		private static double[,] DeQuantize(byte[,] quantizedBytes, int quality)
+		private static float[,] DeQuantize(byte[,] quantizedBytes, int quality)
 		{
-			var result = new double[quantizedBytes.GetLength(0), quantizedBytes.GetLength(1)];
+			var result = new float[quantizedBytes.GetLength(0), quantizedBytes.GetLength(1)];
 			var quantizationMatrix = GetQuantizationMatrix(quality);
 
 			for(int y = 0; y < quantizedBytes.GetLength(0); y++)
@@ -221,9 +221,11 @@ namespace JPEG
 				{72, 92, 95, 98, 112, 100, 103, 99}
 			};
 
-			for(int y = 0; y < result.GetLength(0); y++)
+			var resultW = result.GetLength(0);
+			var resultH = result.GetLength(1);
+			for(int y = 0; y < resultW; y++)
 			{
-				for(int x = 0; x < result.GetLength(1); x++)
+				for(int x = 0; x < resultH; x++)
 				{
 					result[y, x] = (multiplier * result[y, x] + 50) / 100;
 				}
