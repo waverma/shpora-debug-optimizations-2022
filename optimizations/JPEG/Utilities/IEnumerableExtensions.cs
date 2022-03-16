@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 
 namespace JPEG.Utilities
 {
@@ -8,12 +9,59 @@ namespace JPEG.Utilities
 	{
 		public static T MinOrDefault<T>(this IEnumerable<T> enumerable, Func<T, int> selector)
 		{
-			return enumerable.OrderBy(selector).FirstOrDefault();
+			var minimumItem = (Value: default(T),CompareKey: int.MaxValue);
+			
+			foreach (var item in enumerable)
+			{
+				var itemKey = selector(item);
+				if (minimumItem.CompareKey > itemKey) minimumItem = (item, itemKey);
+			}
+
+			return minimumItem.Value;
+			
+			//return enumerable.OrderBy(selector).FirstOrDefault();
+		}
+		
+		public static (T, T) TwoMinOrDefault<T>(this IEnumerable<T> enumerable, Func<T, int> selector)
+		{
+			var minimumItem = (Value: default(T),CompareKey: int.MaxValue);
+			var secondMinValue = (Value: default(T),CompareKey: int.MaxValue);
+
+			foreach (var item in enumerable)
+			{
+				var itemKey = selector(item);
+				if (secondMinValue.CompareKey < itemKey) continue;
+				if (minimumItem.CompareKey < itemKey)
+				{
+					secondMinValue = (item, itemKey);
+					continue;
+				}
+
+				secondMinValue = minimumItem;
+				minimumItem = (item, itemKey);
+			}
+			
+			return (minimumItem.Value, secondMinValue.Value);
+			//return enumerable.OrderBy(selector).FirstOrDefault();
 		}
 
 		public static IEnumerable<T> Without<T>(this IEnumerable<T> enumerable, params T[] elements)
 		{
-			return enumerable.Where(x => !elements.Contains(x));
+			var ignoreFlag = false;
+			
+			foreach (var item in enumerable)
+			{
+				foreach (var ignoredElements in elements)
+				{
+					if (!ignoredElements.Equals(item)) continue;
+					ignoreFlag = true;
+					break;
+				}
+
+				if (!ignoreFlag) yield return item;
+				ignoreFlag = false;
+			}
+			//return enumerable.Where(x => !elements.Contains(x));
 		}
 		
 		public static IEnumerable<T> ToEnumerable<T>(this T element)

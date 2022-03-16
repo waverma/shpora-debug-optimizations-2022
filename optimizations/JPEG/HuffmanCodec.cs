@@ -156,11 +156,13 @@ namespace JPEG
 			
 			while(nodes.Count() > 1)
 			{
-				var firstMin = nodes.MinOrDefault(node => node.Frequency);
-				nodes = nodes.Without(firstMin);
-				var secondMin = nodes.MinOrDefault(node => node.Frequency);
-				nodes = nodes.Without(secondMin);
-				nodes = nodes.Concat(new HuffmanNode {Frequency = firstMin.Frequency + secondMin.Frequency, Left = secondMin, Right = firstMin }.ToEnumerable());
+				// var f = nodes.MinOrDefault(node => node.Frequency);
+				// nodes = nodes.Without(f);
+				// var s = nodes.MinOrDefault(node => node.Frequency);
+				// nodes = nodes.Without(s);
+				var (f, s) = nodes.TwoMinOrDefault(node => node.Frequency);
+				nodes = nodes.Without(f, s);
+				nodes = nodes.Concat(new HuffmanNode {Frequency = f.Frequency + s.Frequency, Left = s, Right = f }.ToEnumerable());
 			}
 			return nodes.First();
 		}
