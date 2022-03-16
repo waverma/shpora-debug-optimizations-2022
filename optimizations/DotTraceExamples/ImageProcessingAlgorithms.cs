@@ -119,7 +119,12 @@ namespace DotTraceExamples
 			var d = Math.Abs(centerRed - neighborRed) + Math.Abs(centerGreen - neighborGreen) +
 					Math.Abs(centerBlue - neighborBlue);
 
-			return Math.Pow(1 - d, multiplicationFactor);
+			var r = 1 - d;
+			for (int i = 0; i < multiplicationFactor; i++)
+			{
+				r *= r;
+			}
+			return r;
 		}
 
 		#endregion
@@ -128,6 +133,10 @@ namespace DotTraceExamples
 		private const int rad = 2;
 		private const int radCol = 20;
 		private const int radCol2 = radCol * radCol;
+
+		private static byte[] bc = new byte[3];
+		private static double[] dc = new double[3];
+		
 		public static RGBImage MeanShift(this RGBImage image)
 		{
 			var width = image.Width;
@@ -137,6 +146,8 @@ namespace DotTraceExamples
 			var bytesPerPixel = RGBImage.BytesPerPixel;
 			var pixelsf = new double[width, height][];
 			var filteringData = new byte[imageData.Length];
+			
+			
 
 			for (var y = 0; y < height; y++)
 			{
@@ -146,10 +157,13 @@ namespace DotTraceExamples
 					var r = image.ImageData[curElem + 2];
 					var g = image.ImageData[curElem + 1];
 					var b = image.ImageData[curElem];
-					var xyz = RgbToXyz(new[] {r, g, b});
-					var luv = XyzToLuv(xyz);
+					dc[0] = r;
+					dc[2] = b;
+					dc[1] = g;
+					RgbToXyz();
+					XyzToLuv();
 
-					pixelsf[x, y] = luv;
+					pixelsf[x, y] = dc;
 				}
 			}
 
@@ -232,23 +246,27 @@ namespace DotTraceExamples
 						numOfIterations++;
 					} while (shift > 1 && numOfIterations < 100);
 
-					var xyz = LuvToXyz(new[] {lCenter, uCenter, vCenter});
-					var rgb = XyzToRgb(xyz);
+					var ar = new[] { lCenter, uCenter, vCenter };
+					dc[0] = lCenter;
+						dc[1] = uCenter;
+							dc[2] = vCenter;
+					LuvToXyz();
+					XyzToRgb();
 
-					filteringData[i + 2] = rgb[0];
-					filteringData[i + 1] = rgb[1];
-					filteringData[i] = rgb[2];
+					filteringData[i + 2] = bc[0];
+					filteringData[i + 1] = bc[1];
+					filteringData[i] = bc[2];
 				}
 			}
 
 			return new RGBImage(image.Width, height, image.BytesPerLine, filteringData);
 		}
 		
-		private static double[] RgbToXyz(byte[] rgb)
+		private static void RgbToXyz()
 		{
-			var red = (double) rgb[0] / 255;
-			var green = (double) rgb[1] / 255;
-			var blue = (double) rgb[2] / 255;
+			var red = (double) bc[0] / 255;
+			var green = (double) bc[1] / 255;
+			var blue = (double) bc[2] / 255;
 
 			if (red > 0.04045)
 			{
@@ -281,20 +299,16 @@ namespace DotTraceExamples
 			green *= 100;
 			blue *= 100;
 
-			var result = new double[3];
-
-			result[0] = red * 0.4124 + green * 0.3576 + blue * 0.1805;
-			result[1] = red * 0.2126 + green * 0.7152 + blue * 0.0722;
-			result[2] = red * 0.0193 + green * 0.1192 + blue * 0.9505;
-
-			return result;
+			dc[0] = red * 0.4124 + green * 0.3576 + blue * 0.1805;
+			dc[1] = red * 0.2126 + green * 0.7152 + blue * 0.0722;
+			dc[2] = red * 0.0193 + green * 0.1192 + blue * 0.9505;
 		}
 
-		private static byte[] XyzToRgb(double[] xyz)
+		private static void XyzToRgb()
 		{
-			var x = xyz[0] / 100;
-			var y = xyz[1] / 100;
-			var z = xyz[2] / 100;
+			var x = dc[0] / 100;
+			var y = dc[1] / 100;
+			var z = dc[2] / 100;
 
 			var red = x * 3.2406 + y * -1.5372 + z * -0.4986;
 			var green = x * -0.9689 + y * 1.8758 + z * 0.0415;
@@ -326,21 +340,17 @@ namespace DotTraceExamples
 			{
 				blue = 12.92 * blue;
 			}
-
-			var rgb = new byte[3];
-
-			rgb[0] = (byte) (red * 255);
-			rgb[1] = (byte) (green * 255);
-			rgb[2] = (byte) (blue * 255);
-
-			return rgb;
+			
+			bc[0] = (byte) (red * 255);
+			bc[1] = (byte) (green * 255);
+			bc[2] = (byte) (blue * 255);
 		}
 
-		private static double[] XyzToLuv(double[] xyz)
+		private static void XyzToLuv()
 		{
-			var l = xyz[1] / 100;
-			var u = 4 * xyz[0] / (xyz[0] + 15 * xyz[1] + 3 * xyz[2]);
-			var v = 9 * xyz[1] / (xyz[0] + 15 * xyz[1] + 3 * xyz[2]);
+			var l = dc[1] / 100;
+			var u = 4 * dc[0] / (dc[0] + 15 * dc[1] + 3 * dc[2]);
+			var v = 9 * dc[1] / (dc[0] + 15 * dc[1] + 3 * dc[2]);
 
 			if (l > 0.008856)
 			{
@@ -358,18 +368,14 @@ namespace DotTraceExamples
 			var u2 = 4 * x / (x + 15 * y + 3 * z);
 			var v2 = 9 * y / (x + 15 * y + 3 * z);
 
-			var luv = new double[3];
-
-			luv[0] = 116 * l - 16;
-			luv[1] = 13 * luv[0] * (u - u2);
-			luv[2] = 13 * luv[0] * (v - v2);
-
-			return luv;
+			dc[0] = 116 * l - 16;
+			dc[1] = 13 * dc[0] * (u - u2);
+			dc[2] = 13 * dc[0] * (v - v2);
 		}
 
-		private static double[] LuvToXyz(double[] luv)
+		private static void LuvToXyz()
 		{
-			var y = (luv[0] + 16) / 116;
+			var y = (dc[0] + 16) / 116;
 
 			if (Math.Pow(y, 3) > 0.008856)
 			{
@@ -387,16 +393,14 @@ namespace DotTraceExamples
 			const double localU = 4 * localX / (localX + 15 * localY + 3 * localZ);
 			const double localV = 9 * localY / (localX + 15 * localY + 3 * localZ);
 
-			var u = luv[1] / (13 * luv[0]) + localU;
-			var v = luv[2] / (13 * luv[0]) + localV;
+			var u = dc[1] / (13 * dc[0]) + localU;
+			var v = dc[2] / (13 * dc[0]) + localV;
 
-			var xyz = new double[3];
+			dc[1] = y * 100;
+			dc[0] = -(9 * dc[1] * u) / ((u - 4) * v - u * v);
+			dc[2] = (9 * dc[1] - 15 * v * dc[1] - v * dc[0]) / (3 * v);
 
-			xyz[1] = y * 100;
-			xyz[0] = -(9 * xyz[1] * u) / ((u - 4) * v - u * v);
-			xyz[2] = (9 * xyz[1] - 15 * v * xyz[1] - v * xyz[0]) / (3 * v);
-
-			return xyz;
+			//return xyz;
 		}
 
 		#endregion

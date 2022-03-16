@@ -1,4 +1,6 @@
 ﻿using System;
+using System.ComponentModel;
+using System.Diagnostics.Tracing;
 using System.Linq;
 using BenchmarkDotNet.Attributes;
 
@@ -34,10 +36,26 @@ namespace Benchmarks.Benchmarks
 
 		#endregion
 	}
-	public struct S
+	
+	public struct S : IEquatable<S>
 	{
 		public int N;
 		public string Str;
+
+		public bool Equals(S other)
+		{
+			return N == other.N && Str == other.Str;
+		}
+
+		public override bool Equals(object obj)
+		{
+			return obj is S other && Equals(other);
+		}
+
+		public override int GetHashCode()
+		{
+			return HashCode.Combine(N, Str);
+		}
 	}
 
 	[SimpleJob(warmupCount: 5, targetCount: 7)]
