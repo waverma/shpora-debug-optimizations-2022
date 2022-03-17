@@ -19,8 +19,9 @@ namespace JPEG
 			{
 				Console.WriteLine(IntPtr.Size == 8 ? "64-bit version" : "32-bit version");
 				var sw = Stopwatch.StartNew();
-				var fileName = @"sample.bmp";
-//				var fileName = "Big_Black_River_Railroad_Bridge.bmp";
+				var fileName = @"earth.bmp";
+				fileName = @"sample.bmp";
+				//fileName = "Big_Black_River_Railroad_Bridge.bmp";
 				var compressedFileName = fileName + ".compressed." + CompressionQuality;
 				var uncompressedFileName = fileName + ".uncompressed." + CompressionQuality + ".bmp";
 				
@@ -30,7 +31,7 @@ namespace JPEG
 					var imageMatrix = (Matrix) bmp;
 
 					sw.Stop();
-					Console.WriteLine($"{bmp.Width}x{bmp.Height} - {fileStream.Length / (1024.0 * 1024):F2} MB");
+					Console.WriteLine($"{bmp.Width}x{bmp.Height} - {fileStream.Length / (1024.0 * 1024):F2} MB " + sw.Elapsed);
 					sw.Start();
 
 					var compressionResult = Compress(imageMatrix, CompressionQuality);
@@ -62,7 +63,7 @@ namespace JPEG
 			{
 				for(var x = 0; x < matrix.Width; x += DCTSize)
 				{
-					foreach (var selector in new Func<Pixel, float>[] {p => p.Y, p => p.Cb, p => p.Cr})
+					foreach (var selector in new Func<StructPixel, float>[] {p => p.Y, p => p.Cb, p => p.Cr})
 					{
 						var subMatrix = GetSubMatrix(matrix, y, DCTSize, x, DCTSize, selector);
 						ShiftMatrixValues(subMatrix, -128);
@@ -103,7 +104,7 @@ namespace JPEG
 							DCT.IDCT2D(channelFreqs, channel);
 							ShiftMatrixValues(channel, 128);
 						}
-						SetPixels(result, _y, cb, cr, PixelFormat.YCbCr, y, x);
+						SetYCbCrPixels(result, _y, cb, cr, y, x);
 					}
 				}
 			}
@@ -121,17 +122,17 @@ namespace JPEG
 					subMatrix[y, x] = subMatrix[y, x] + shiftValue;
 		}
 
-		private static void SetPixels(Matrix matrix, float[,] a, float[,] b, float[,] c, PixelFormat format, int yOffset, int xOffset)
+		private static void SetYCbCrPixels(Matrix matrix, float[,] a, float[,] b, float[,] c, int yOffset, int xOffset)
 		{
 			var height = a.GetLength(0);
 			var width = a.GetLength(1);
 
 			for(var y = 0; y < height; y++)
 				for(var x = 0; x < width; x++)
-					matrix.Pixels[yOffset + y, xOffset + x] = new Pixel(a[y, x], b[y, x], c[y, x], format);
+					matrix.Pixels[yOffset + y, xOffset + x] = new StructPixel(a[y, x], b[y, x], c[y, x]);
 		}
 
-		private static float[,] GetSubMatrix(Matrix matrix, int yOffset, int yLength, int xOffset, int xLength, Func<Pixel, float> componentSelector)
+		private static float[,] GetSubMatrix(Matrix matrix, int yOffset, int yLength, int xOffset, int xLength, Func<StructPixel, float> componentSelector)
 		{
 			var result = new float[yLength, xLength];
 			for(var j = 0; j < yLength; j++)
@@ -233,6 +234,6 @@ namespace JPEG
 			return result;
 		}
 
-		const int DCTSize = 8;
+		const byte DCTSize = 8;
 	}
 }

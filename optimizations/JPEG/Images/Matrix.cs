@@ -1,22 +1,23 @@
 ﻿using System.Drawing;
+using System.Drawing.Imaging;
 
 namespace JPEG.Images
 {
-    class Matrix
+    struct Matrix
     {
-        public readonly Pixel[,] Pixels;
+        public readonly StructPixel[,] Pixels;
         public readonly int Height;
         public readonly int Width;
-				
+        
         public Matrix(int height, int width)
         {
             Height = height;
             Width = width;
 			
-            Pixels = new Pixel[height,width];
+            Pixels = new StructPixel[height,width];
             for(var i = 0; i< height; ++i)
             for(var j = 0; j< width; ++j)
-                Pixels[i, j] = new Pixel(0, 0, 0, PixelFormat.RGB);
+                Pixels[i, j] = new StructPixel(0,0,0);
         }
 
         public static explicit operator Matrix(Bitmap bmp)
@@ -24,15 +25,25 @@ namespace JPEG.Images
             var height = bmp.Height - bmp.Height % 8;
             var width = bmp.Width - bmp.Width % 8;
             var matrix = new Matrix(height, width);
-
-            for(var j = 0; j < height; j++)
+            
+            var data = bmp.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.ReadWrite, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            unsafe
             {
-                for(var i = 0; i < width; i++)
+                byte* curpos;
+                for (int h = 0; h < height; h++)
                 {
-                    var pixel = bmp.GetPixel(i, j);
-                    matrix.Pixels[j, i] = new Pixel(pixel.R, pixel.G, pixel.B, PixelFormat.RGB);
+                    curpos = ((byte*)data.Scan0) + h * data.Stride;
+                    for (int w = 0; w < width; w++)
+                    {
+                        var a1  = *(curpos++);
+                        var a2  = *(curpos++);
+                        var a3  = *(curpos++);
+                        
+                        matrix.Pixels[h, w] = new StructPixel(a3, a2, a1);
+                    }
                 }
             }
+            bmp.UnlockBits(data);
 
             return matrix;
         }
@@ -41,26 +52,25 @@ namespace JPEG.Images
         {
             var bmp = new Bitmap(matrix.Width, matrix.Height);
 
-            for(var j = 0; j < bmp.Height; j++)
+            var data = bmp.LockBits(new Rectangle(0, 0, matrix.Width, matrix.Height), ImageLockMode.ReadWrite, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            unsafe
             {
-                for(var i = 0; i < bmp.Width; i++)
+                byte* curpos;
+                for (int h = 0; h < matrix.Height; h++)
                 {
-                    var pixel = matrix.Pixels[j, i];
-                    bmp.SetPixel(i, j, Color.FromArgb(ToByte(pixel.R), ToByte(pixel.G), ToByte(pixel.B)));
+                    curpos = ((byte*)data.Scan0) + h * data.Stride;
+                    for (int w = 0; w < matrix.Width; w++)
+                    {
+                        var pixel = matrix.Pixels[h, w];
+                        *(curpos++) = pixel.B;
+                        *(curpos++) = pixel.G;
+                        *(curpos++) = pixel.R;
+                    }
                 }
             }
+            bmp.UnlockBits(data);
 
             return bmp;
-        }
-
-        public static int ToByte(double d)
-        {
-            var val = (int) d;
-            if (val > byte.MaxValue)
-                return byte.MaxValue;
-            if (val < byte.MinValue)
-                return byte.MinValue;
-            return val;
         }
     }
 }
