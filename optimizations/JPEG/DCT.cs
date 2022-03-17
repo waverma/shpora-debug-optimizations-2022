@@ -59,30 +59,30 @@ namespace JPEG
 			{
 				Parallel.For(0, width, step =>
 				{
-					for(byte y = 0; y < height; y++)
-					{
-						var sum = MathEx
-							.SumByTwoVariables(
-								0, width,
-								0, height,
-								(u, v) => BasisFunction(coeffs[u, v], u, v, (byte)step, y, height, width) * Alpha(u) * Alpha(v));
-
-						output[step, y] = sum * Beta(height, width);
-					}
-					
-					// MathEx.LoopByTwoVariables(
-					// 	step, step + 1,
-					// 	0, height,
-					// 	(u, v) =>
-					// 	{
-					// 		var sum = MathEx
-					// 			.SumByTwoVariables(
-					// 				0, width,
-					// 				0, height,
-					// 				(x, y) => BasisFunction(input[x, y], u, v, x, y, height, width));
+					// for(byte y = 0; y < height; y++)
+					// {
+					// 	var sum = MathEx
+					// 		.SumByTwoVariables(
+					// 			0, width,
+					// 			0, height,
+					// 			(u, v) => BasisFunction(coeffs[u, v], u, v, (byte)step, y, height, width) * Alpha(u) * Alpha(v));
 					//
-					// 		coeffs[u, v] = sum * Beta(height, width) * Alpha(u) * Alpha(v);
-					// 	});
+					// 	output[step, y] = sum * Beta(height, width);
+					// }
+					
+					MathEx.LoopByTwoVariables(
+						(byte)step, (byte)(step + 1),
+						0, height,
+						(x, y) =>
+						{
+							var sum = MathEx
+								.SumByTwoVariables(
+									0, width,
+									0, height,
+									(u, v) => BasisFunction(coeffs[u, v], u, v, x, y, height, width) * Alpha(u) * Alpha(v));
+
+							output[x, y] = sum * Beta(height, width);
+						});
 				});
 			}
 			else
