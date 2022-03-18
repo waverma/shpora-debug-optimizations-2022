@@ -3,7 +3,7 @@ using System.Drawing.Imaging;
 
 namespace JPEG.Images
 {
-    struct Matrix
+    public struct Matrix
     {
         public readonly StructPixel[,] Pixels;
         public readonly int Height;

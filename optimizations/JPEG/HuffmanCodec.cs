@@ -78,7 +78,7 @@ namespace JPEG
 
 	class HuffmanCodec
 	{
-		public static byte[] Encode(IEnumerable<byte> data, out Dictionary<BitsWithLength, byte> decodeTable, out long bitsCount)
+		public static byte[] Encode(byte[] data, out Dictionary<BitsWithLength, byte> decodeTable, out long bitsCount)
 		{
 			var frequences = CalcFrequences(data);
 
@@ -88,6 +88,7 @@ namespace JPEG
 			FillEncodeTable(root, encodeTable);
 
 			var bitsBuffer = new BitsBuffer();
+
 			foreach(var b in data)
 				bitsBuffer.Add(encodeTable[b]);
 
@@ -156,10 +157,6 @@ namespace JPEG
 			
 			while(nodes.Count() > 1)
 			{
-				// var f = nodes.MinOrDefault(node => node.Frequency);
-				// nodes = nodes.Without(f);
-				// var s = nodes.MinOrDefault(node => node.Frequency);
-				// nodes = nodes.Without(s);
 				var (f, s) = nodes.TwoMinOrDefault(node => node.Frequency);
 				nodes = nodes.Without(f, s);
 				nodes = nodes.Concat(new HuffmanNode {Frequency = f.Frequency + s.Frequency, Left = s, Right = f }.ToEnumerable());
