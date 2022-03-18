@@ -58,6 +58,9 @@ namespace JPEG
 		private static CompressedImage Compress(Matrix matrix, int quality = 50)
 		{
 			var allQuantizedBytes = new List<byte>();
+			var subMatrix = new float[DCTSize, DCTSize];
+			var channelFreqs = new float[DCTSize, DCTSize];
+			var quantizedFreqs = new byte[DCTSize, DCTSize];
 
 			for(var y = 0; y < matrix.Height; y += DCTSize)
 			{
@@ -65,10 +68,10 @@ namespace JPEG
 				{
 					foreach (var selector in new Func<StructPixel, float>[] {p => p.Y, p => p.Cb, p => p.Cr})
 					{
-						var subMatrix = GetSubMatrix(matrix, y, DCTSize, x, DCTSize, selector);
+						GetSubMatrixUnsafe(matrix, y, DCTSize, x, DCTSize, selector, subMatrix);
 						ShiftMatrixValues(subMatrix, -128);
-						var channelFreqs = DCT.DCT2D(subMatrix);
-						var quantizedFreqs = Quantize(channelFreqs, quality);
+						DCT.DCT2D(subMatrix, channelFreqs);
+						Quantize(channelFreqs, quality, quantizedFreqs);
 						var quantizedBytes = ZigZagScan(quantizedFreqs);
 						allQuantizedBytes.AddRange(quantizedBytes);
 					}
@@ -112,14 +115,24 @@ namespace JPEG
 			return result;
 		}
 
-		private static void ShiftMatrixValues(float[,] subMatrix, int shiftValue)
-		{
+		private static unsafe void ShiftMatrixValues(float[,] subMatrix, int shiftValue)
+		{ //TODO переписать на указатели
 			var height = subMatrix.GetLength(0);
 			var width = subMatrix.GetLength(1);
+			//
+			// for(var y = 0; y < height; y++)
+			// 	for(var x = 0; x < width; x++)
+			// 		subMatrix[y, x] += shiftValue;
 			
-			for(var y = 0; y < height; y++)
-				for(var x = 0; x < width; x++)
-					subMatrix[y, x] = subMatrix[y, x] + shiftValue;
+			fixed (float* output = subMatrix)
+			{
+				float* target = output;
+
+				for(var j = 0; j < width*height; j++, target++)
+				{
+					*target += shiftValue;
+				}
+			}
 		}
 
 		private static void SetYCbCrPixels(Matrix matrix, float[,] a, float[,] b, float[,] c, int yOffset, int xOffset)
@@ -132,13 +145,57 @@ namespace JPEG
 					matrix.Pixels[yOffset + y, xOffset + x] = new StructPixel(a[y, x], b[y, x], c[y, x]);
 		}
 
-		private static float[,] GetSubMatrix(Matrix matrix, int yOffset, int yLength, int xOffset, int xLength, Func<StructPixel, float> componentSelector)
-		{
-			var result = new float[yLength, xLength];
+		private static void GetSubMatrix(Matrix matrix, int yOffset, int yLength, int xOffset, int xLength, Func<StructPixel, float> componentSelector, float[,] result)
+		{ //TODO переписать на указатели
+			// var result = new float[yLength, xLength];
+
+			// unsafe
+			// {
+			// 	float* curpos;
+			// 	for (int j = 0; j < yLength; j++)
+			// 	{
+			// 		curpos = ((byte*)data.Scan0) + j * data.Stride;
+			// 		for (int i = 0; i < xLength; i++)
+			// 		{
+			// 			*(curpos++) = componentSelector(matrix.Pixels[yOffset + j, xOffset + i]);
+			// 		}
+			// 	}
+			// }
+
 			for(var j = 0; j < yLength; j++)
 				for(var i = 0; i < xLength; i++)
 					result[j, i] = componentSelector(matrix.Pixels[yOffset + j, xOffset + i]);
-			return result;
+			// return result;
+		}
+
+		private static unsafe void GetSubMatrixUnsafe(Matrix matrix, int yOffset, int yLength, int xOffset, int xLength, Func<StructPixel, float> componentSelector, float[,] result)
+		{
+			var w = matrix.Width;
+			fixed(StructPixel* input = matrix.Pixels)
+			{
+				fixed (float* output = result)
+				{
+					StructPixel* source = input;
+					float* target = output;
+					source += yOffset * w;
+					source += xOffset;
+
+					for(var j = 0; j < yLength; j++)
+					{
+						for (var i = 0; i < xLength; i++)
+						{
+							var a = *source;
+							*target = componentSelector(a);
+							
+							target++;
+							source++;
+						}
+
+						source -= yLength;
+						source += w;
+					}
+				}
+			}
 		}
 
 		private static IEnumerable<byte> ZigZagScan(byte[,] channelFreqs)
@@ -171,20 +228,42 @@ namespace JPEG
 			};
 		}
 
-		private static byte[,] Quantize(float[,] channelFreqs, int quality)
-		{
-			var result = new byte[channelFreqs.GetLength(0), channelFreqs.GetLength(1)];
-
+		private static unsafe void Quantize(float[,] channelFreqs, int quality, byte[,] result)
+		{ //TODO переписать на указатели
+			// var result = new byte[channelFreqs.GetLength(0), channelFreqs.GetLength(1)];
+			var height = channelFreqs.GetLength(0);
+			var width = channelFreqs.GetLength(1);
+			
 			var quantizationMatrix = GetQuantizationMatrix(quality);
-			for(int y = 0; y < channelFreqs.GetLength(0); y++)
+			fixed(float* input = channelFreqs)
 			{
-				for(int x = 0; x < channelFreqs.GetLength(1); x++)
+				fixed (byte* output = result)
 				{
-					result[y, x] = (byte)(channelFreqs[y, x] / quantizationMatrix[y, x]);
+					float* source = input;
+					byte* target = output;
+
+					for(var y = 0; y < height; y++)
+					{
+						for (var x = 0; x < width; x++)
+						{
+							*target = (byte)(*source / quantizationMatrix[y, x]);
+							
+							target++;
+							source++;
+						}
+					}
 				}
 			}
 
-			return result;
+			// for(int y = 0; y < channelFreqs.GetLength(0); y++)
+			// {
+			// 	for(int x = 0; x < channelFreqs.GetLength(1); x++)
+			// 	{
+			// 		result[y, x] = (byte)(channelFreqs[y, x] / quantizationMatrix[y, x]);
+			// 	}
+			// }
+
+			// return result;
 		}
 
 		private static float[,] DeQuantize(byte[,] quantizedBytes, int quality)
