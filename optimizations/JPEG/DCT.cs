@@ -6,11 +6,11 @@ namespace JPEG
 {
 	public class DCT
 	{
-		public static float[,] DCT2D(float[,] input)
+		public static void DCT2D(float[,] input, float[,] coeffs)
 		{
 			var width = (byte)input.GetLength(1);
 			var height = (byte)input.GetLength(0);
-			var coeffs = new float[width, height];
+			// var coeffs = new float[width, height];
 
 			if (width <= Environment.ProcessorCount)
 			{
@@ -25,7 +25,7 @@ namespace JPEG
 								.SumByTwoVariables(
 									0, width,
 									0, height,
-									(byte x, byte y) => BasisFunction(input[x, y], u, v, x, y, height, width) * Alpha(u) * Alpha(v));
+									(x, y) => BasisFunction(input[x, y], u, v, x, y, height, width) * Alpha(u) * Alpha(v));
 
 							coeffs[u, v] = sum * Beta(height, width);
 						});
@@ -47,7 +47,7 @@ namespace JPEG
 						coeffs[u, v] = sum * Beta(height, width) * Alpha(u) * Alpha(v);
 					});
 			}
-			return coeffs;
+			// return coeffs;
 		}
 
 		public static void IDCT2D(float[,] coeffs, float[,] output)
@@ -105,10 +105,11 @@ namespace JPEG
 
 		public static float BasisFunction(float a, byte u, byte v, byte x, byte y, byte height, byte width)
 		{
-			var b = (float)Math.Cos(((2f * x + 1f) * u * (float)Math.PI) / (2f * width));
-			var c = (float)Math.Cos(((2f * y + 1f) * v * (float)Math.PI) / (2f * height));
+			// var b = (float)Math.Cos(((2f * x + 1f) * u * (float)Math.PI) / (2f * width));
+			// var c = (float)Math.Cos(((2f * y + 1f) * v * (float)Math.PI) / (2f * height));
+			// return a * b * c;
 
-			return a * b * c;
+			return a * (float)Math.Cos(((2f * x + 1f) * u * (float)Math.PI) / (2f * width)) * (float)Math.Cos(((2f * y + 1f) * v * (float)Math.PI) / (2f * height));
 		}
 
 		private static float Alpha(byte u)
