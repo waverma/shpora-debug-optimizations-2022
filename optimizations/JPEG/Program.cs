@@ -24,8 +24,8 @@ namespace JPEG
 				Console.WriteLine(IntPtr.Size == 8 ? "64-bit version" : "32-bit version");
 				var sw = Stopwatch.StartNew();
 				var fileName = @"earth.bmp";
-				//fileName = @"sample.bmp";
-				fileName = @"MARBLES.bmp";
+				fileName = @"sample.bmp";
+				//fileName = @"MARBLES.bmp";
 				//fileName = "Big_Black_River_Railroad_Bridge.bmp";
 				var compressedFileName = fileName + ".compressed." + CompressionQuality;
 				var uncompressedFileName = fileName + ".uncompressed." + CompressionQuality + ".bmp";
@@ -37,7 +37,7 @@ namespace JPEG
 					// GC.Collect();
 					sw.Stop();
 					Console.WriteLine($"{bmp.Width}x{bmp.Height} - {fileStream.Length / (1024.0 * 1024):F2} MB " + sw.Elapsed);
-					sw.Start();
+					sw.Restart();
 					// GC.Collect();
 					var compressionResult = Compressor.Compress(imageMatrix, CompressionQuality);
 					imageMatrix = default;

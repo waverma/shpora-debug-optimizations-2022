@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Threading.Tasks;
 using JPEG.Images;
 using static JPEG.Program;
 
@@ -29,7 +30,8 @@ namespace JPEG
                             allQuantizedBytes.ReadAsync(quantizedBytes, 0, quantizedBytes.Length).Wait();
                             ZigZager.ZigZagUnScan(quantizedBytes, quantizedFreqs);
                             DeQuantize(quantizedFreqs, image.Quality, channelFreqs);
-                            MyDCT.IDCT2D(channelFreqs, channel);
+                            MyCringeDCT.IDCT2D(channelFreqs, channel);
+                            // MyDCT.IDCT2D(channelFreqs, channel);
                             // ShiftMatrixValues(channel, 128);
                         }
                         SetYCbCrPixels(result, _y, cb, cr, y, x);
@@ -42,8 +44,6 @@ namespace JPEG
         
         private static unsafe void SetYCbCrPixels(Matrix matrix, float[,] a, float[,] b, float[,] c, int yOffset, int xOffset)
         {
-            var height = a.GetLength(0);
-            var width = a.GetLength(1);
             var w = matrix.Width;
 
             fixed(StructPixel* output = matrix.Pixels)
@@ -57,9 +57,9 @@ namespace JPEG
                     target += yOffset * w;
                     target += xOffset;
 
-                    for(var j = 0; j < width; j++)
+                    for(var j = 0; j < 8; j++)
                     {
-                        for (var i = 0; i < height; i++)
+                        for (var i = 0; i < 8; i++)
                         {
                             *target = new StructPixel(*sourceA, *sourceB, *sourceC);
 							
@@ -69,7 +69,7 @@ namespace JPEG
                             sourceC++;
                         }
 
-                        target -= width;
+                        target -= 8;
                         target += w;
                     }
                 }
@@ -78,8 +78,6 @@ namespace JPEG
         
         private static unsafe void DeQuantize(byte[,] quantizedBytes, int quality, float[,] result)
         {
-            var height = quantizedBytes.GetLength(0);
-            var width = quantizedBytes.GetLength(1);
             var quantizationMatrix = GetQuantizationMatrix(quality);
             fixed (int* qm = quantizationMatrix)
             {
@@ -87,11 +85,11 @@ namespace JPEG
                 {
                     fixed (float* output = result)
                     {
-                        var source = new Span<byte>(input, height * width);
-                        var target = new Span<float>(output, height * width);
-                        var coeff = new Span<int>(qm, height * width);
+                        var source = new Span<byte>(input, 64);
+                        var target = new Span<float>(output, 64);
+                        var coeff = new Span<int>(qm, 64);
 						
-                        for(var y = 0; y < height * width; y++)
+                        for(var y = 0; y < 64; y++)
                         {
                             target[y] = ((sbyte) source[y]) * coeff[y];
                         }

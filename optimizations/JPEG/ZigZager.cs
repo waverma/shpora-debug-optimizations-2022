@@ -1,14 +1,14 @@
-﻿namespace JPEG
+﻿using System.Threading;
+
+namespace JPEG
 {
     public class ZigZager
     {
-        private static long Pointer2;
         public static unsafe void ZigZagUnScan(byte[] quantizedBytes, byte[,] list)
         {
             fixed (byte* cursor = quantizedBytes)
             {
                 byte* target = cursor;
-                target += Pointer2;
                 list[0, 0] = *(target++); 
                 list[0, 1] = *(target++); 
                 list[1, 0] = *(target++); 
@@ -73,8 +73,6 @@
                 list[6, 7] = *(target++); 
                 list[7, 6] = *(target++); 
                 list[7, 7] = *(target);
-
-                Pointer += 8 * 8;
             }
         }
         

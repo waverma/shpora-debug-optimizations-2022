@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Numerics;
+using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
 using JPEG;
 using JPEG.Images;
@@ -13,9 +15,11 @@ namespace JPEG
         {
             var allQuantizedBytes = new byte[matrix.Height * matrix.Width * 3];
             var subMatrix = new float[DCTSize, DCTSize];
+            // var channelFreqsComplex = new Complex[DCTSize, DCTSize];
             var channelFreqs = new float[DCTSize, DCTSize];
             var quantizedFreqs = new byte[DCTSize, DCTSize];
             var componentSelectors = new Func<StructPixel, float>[] {p => p.Y, p => p.Cb, p => p.Cr};
+            // FFT.Setup(DCTSize, DCTSize);
 
             for(var y = 0; y < matrix.Height; y += DCTSize)
             {
@@ -23,9 +27,10 @@ namespace JPEG
                 {
                     foreach (var selector in componentSelectors)
                     {
-                        GetSubMatrix(matrix, y, DCTSize, x, DCTSize, selector, subMatrix);
+                        GetSubMatrix(matrix, y, x, selector, subMatrix);
                         // ShiftMatrixValues(subMatrix, -128);
-                        MyDCT.DCT2D(subMatrix, channelFreqs);
+                        MyCringeDCT.DCT2D(subMatrix, channelFreqs);
+                        // MyDCT.DCT2D(subMatrix, channelFreqs);
                         Quantize(channelFreqs, quality, quantizedFreqs);
                         ZigZager.FillZigZagScan(quantizedFreqs, allQuantizedBytes);
                     }
@@ -41,21 +46,19 @@ namespace JPEG
         
         private static unsafe void Quantize(float[,] channelFreqs, int quality, byte[,] result)
         {
-            var height = channelFreqs.GetLength(0);
-            var width = channelFreqs.GetLength(1);
-			
             var quantizationMatrix = GetQuantizationMatrix(quality);
+			
             fixed (int* qm = quantizationMatrix)
             {
                 fixed(float* input = channelFreqs)
                 {
                     fixed (byte* output = result)
                     {
-                        var source = new Span<float>(input, height * width);
-                        var target = new Span<byte>(output, height * width);
-                        var coeff = new Span<int>(qm, height * width);
-						
-                        for(var y = 0; y < height * width; y++)
+                        var source = new Span<float>(input, 64);
+                        var target = new Span<byte>(output, 64);
+                        var coeff = new Span<int>(qm, 64);
+            
+                        for(var y = 0; y < 64; y++)
                         {
                             target[y] = (byte)(source[y] / coeff[y]);
                         }
@@ -64,7 +67,7 @@ namespace JPEG
             }
         }
         
-        private static unsafe void GetSubMatrix(Matrix matrix, int yOffset, int yLength, int xOffset, int xLength, Func<StructPixel, float> componentSelector, float[,] result)
+        private static unsafe void GetSubMatrix(Matrix matrix, int yOffset, int xOffset, Func<StructPixel, float> componentSelector, float[,] result)
         {
             var w = matrix.Width;
             fixed(StructPixel* input = matrix.Pixels)
@@ -75,10 +78,10 @@ namespace JPEG
                     float* target = output;
                     source += yOffset * w;
                     source += xOffset;
-					
-                    for(var j = 0; j < yLength; j++)
+
+                    for(var j = 0; j < 8; j++)
                     {
-                        for (var i = 0; i < xLength; i++)
+                        for (var i = 0; i < 8; i++)
                         {
                             var a = *source;
                             *target = componentSelector(a)-128;
@@ -87,7 +90,7 @@ namespace JPEG
                             source++;
                         }
 					
-                        source -= yLength;
+                        source -= 8;
                         source += w;
                     }
                 }

@@ -8,6 +8,7 @@
 
     <ItemGroup>
       <PackageReference Include="BenchmarkDotNet" Version="0.13.1" />
+      <PackageReference Include="OpenCL.Net" Version="2.2.9" />
       <PackageReference Include="System.Drawing.Common" Version="4.5.1" />
     </ItemGroup>
 
@@ -16,7 +17,7 @@
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
       <None Update="earth.bmp">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
       <None Update="MARBLES.bmp">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
