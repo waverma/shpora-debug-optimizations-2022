@@ -15,11 +15,9 @@ namespace JPEG
         {
             var allQuantizedBytes = new byte[matrix.Height * matrix.Width * 3];
             var subMatrix = new float[DCTSize, DCTSize];
-            // var channelFreqsComplex = new Complex[DCTSize, DCTSize];
             var channelFreqs = new float[DCTSize, DCTSize];
             var quantizedFreqs = new byte[DCTSize, DCTSize];
             var componentSelectors = new Func<StructPixel, float>[] {p => p.Y, p => p.Cb, p => p.Cr};
-            // FFT.Setup(DCTSize, DCTSize);
 
             for(var y = 0; y < matrix.Height; y += DCTSize)
             {
@@ -28,9 +26,7 @@ namespace JPEG
                     foreach (var selector in componentSelectors)
                     {
                         GetSubMatrix(matrix, y, x, selector, subMatrix);
-                        // ShiftMatrixValues(subMatrix, -128);
                         MyCringeDCT.DCT2D(subMatrix, channelFreqs);
-                        // MyDCT.DCT2D(subMatrix, channelFreqs);
                         Quantize(channelFreqs, quality, quantizedFreqs);
                         ZigZager.FillZigZagScan(quantizedFreqs, allQuantizedBytes);
                     }

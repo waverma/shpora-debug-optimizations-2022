@@ -14,10 +14,10 @@ namespace JPEG
             var _y = new float[DCTSize, DCTSize];
             var cb = new float[DCTSize, DCTSize];
             var cr = new float[DCTSize, DCTSize];
-            var components = new[] {_y, cb, cr};
             var channelFreqs = new float[DCTSize, DCTSize];
             var quantizedBytes = new byte[DCTSize * DCTSize];
             var quantizedFreqs = new byte[DCTSize, DCTSize];
+            var components = new[] {_y, cb, cr};
 			
             using (var allQuantizedBytes = new MemoryStream(HuffmanCodec.Decode(image.CompressedBytes, image.DecodeTable, image.BitsCount)))
             {
@@ -31,8 +31,6 @@ namespace JPEG
                             ZigZager.ZigZagUnScan(quantizedBytes, quantizedFreqs);
                             DeQuantize(quantizedFreqs, image.Quality, channelFreqs);
                             MyCringeDCT.IDCT2D(channelFreqs, channel);
-                            // MyDCT.IDCT2D(channelFreqs, channel);
-                            // ShiftMatrixValues(channel, 128);
                         }
                         SetYCbCrPixels(result, _y, cb, cr, y, x);
                     }

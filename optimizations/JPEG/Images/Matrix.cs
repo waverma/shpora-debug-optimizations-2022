@@ -13,8 +13,9 @@ namespace JPEG.Images
         {
             Height = height;
             Width = width;
-			
-            Pixels = new StructPixel[height,width];
+            if (BufferManager.Pixels.GetLength(0) != height || BufferManager.Pixels.GetLength(1) != width) 
+                BufferManager.Setup(width, height, 0);
+            Pixels = BufferManager.Pixels;
         }
 
         public static explicit operator Matrix(Bitmap bmp)
