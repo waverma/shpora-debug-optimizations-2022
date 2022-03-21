@@ -7,30 +7,10 @@ namespace JPEG.Utilities
 {
 	static class IEnumerableExtensions
 	{
-		public static T MinOrDefault<T>(this IEnumerable<T> enumerable, Func<T, int> selector)
-		{
-			var minimumItem = (Value: default(T),CompareKey: int.MaxValue);
-			
-			foreach (var item in enumerable)
-			{
-				var itemKey = selector(item);
-				if (minimumItem.CompareKey > itemKey) minimumItem = (item, itemKey);
-			}
-
-			return minimumItem.Value;
-			
-			//return enumerable.OrderBy(selector).FirstOrDefault();
-		}
-		
-		public static unsafe (T, T) TwoMinOrDefault<T>(this T[] enumerable, Func<T, int> selector)
+		public static (T, T) TwoMinOrDefault<T>(this IEnumerable<T> enumerable, Func<T, int> selector)
 		{
 			var minimumItem = (Value: default(T),CompareKey: int.MaxValue);
 			var secondMinValue = (Value: default(T),CompareKey: int.MaxValue);
-
-			fixed (int* input = enumerable)
-			{
-				
-			}
 
 			foreach (var item in enumerable)
 			{
@@ -49,7 +29,7 @@ namespace JPEG.Utilities
 			return (minimumItem.Value, secondMinValue.Value);
 		}
 
-		public static T[] Without<T>(this T[] enumerable, params T[] elements)
+		public static IEnumerable<T> Without<T>(this IEnumerable<T> enumerable, params T[] elements)
 		{
 			var ignoreFlag = false;
 			

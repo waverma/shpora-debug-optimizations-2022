@@ -17,14 +17,13 @@ namespace JPEG
 
 		static void Main(string[] args)
 		{
-			// BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
-			// BenchmarkRunner.Run<JpegBenchmark>();
+			MyCringeDCT.Setup();
 			try
 			{
 				Console.WriteLine(IntPtr.Size == 8 ? "64-bit version" : "32-bit version");
 				var sw = Stopwatch.StartNew();
 				var fileName = @"earth.bmp";
-				fileName = @"sample.bmp";
+				// fileName = @"sample.bmp";
 				fileName = @"MARBLES.bmp";
 				//fileName = "Big_Black_River_Railroad_Bridge.bmp";
 				var compressedFileName = fileName + ".compressed." + CompressionQuality;

@@ -151,6 +151,58 @@ namespace JPEG
 				}
 			}
 		}
+		
+		public static void WithoutTwoMin(HuffmanNode[] enumerable, Func<HuffmanNode, int> selector, HuffmanNode[] result)
+		{
+			(HuffmanNode Value, int CompareKey) minimumItem;
+			(HuffmanNode Value, int CompareKey) secondMinValue;
+			var pointer = 0;
+
+			var a = enumerable[0];
+			var aKey = selector(a);
+			var b = enumerable[1];
+			var bKey = selector(b);
+			
+			if (aKey < bKey)
+			{
+				minimumItem = (Value: a,CompareKey: aKey);
+				secondMinValue = (Value: b,CompareKey: bKey);
+			}
+			else
+			{
+				minimumItem = (Value: b,CompareKey: bKey);
+				secondMinValue = (Value: a,CompareKey: aKey);
+			}
+
+			for (var i = 2; i < enumerable.Length; i++)
+			{
+				var item = enumerable[i];
+				var itemKey = selector(item);
+				if (secondMinValue.CompareKey < itemKey)
+				{
+					result[pointer++] = item;
+				}
+				else if (minimumItem.CompareKey < itemKey)
+				{
+					result[pointer++] = secondMinValue.Value;
+					secondMinValue = (item, itemKey);
+				}
+				else
+				{
+					result[pointer++] = secondMinValue.Value;
+					secondMinValue = minimumItem;
+					minimumItem = (item, itemKey);
+				}
+			
+			}
+			
+			result[pointer] = new HuffmanNode
+			{
+				Frequency = minimumItem.Value.Frequency + secondMinValue.Value.Frequency, 
+				Left = minimumItem.Value, 
+				Right = secondMinValue.Value
+			};
+		}
 
 		private static HuffmanNode BuildHuffmanTree(int[] frequences)
 		{
@@ -158,8 +210,9 @@ namespace JPEG
 			
 			while(nodes.Length > 1)
 			{
-				var (f, s) = nodes.TwoMinOrDefault(node => node.Frequency);
-				nodes = nodes.Without(f, s).Concat(new HuffmanNode {Frequency = f.Frequency + s.Frequency, Left = s, Right = f }.ToEnumerable()).ToArray();
+				var nodes2 = new HuffmanNode[nodes.Length - 1];
+				WithoutTwoMin(nodes, node => node.Frequency, nodes2);
+				nodes = nodes2;
 			}
 			return nodes.First();
 		}
