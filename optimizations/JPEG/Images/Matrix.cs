@@ -15,9 +15,6 @@ namespace JPEG.Images
             Width = width;
 			
             Pixels = new StructPixel[height,width];
-            for(var i = 0; i< height; ++i)
-            for(var j = 0; j< width; ++j)
-                Pixels[i, j] = new StructPixel(0,0,0);
         }
 
         public static explicit operator Matrix(Bitmap bmp)

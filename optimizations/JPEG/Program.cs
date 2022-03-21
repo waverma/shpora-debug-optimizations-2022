@@ -25,7 +25,7 @@ namespace JPEG
 				var sw = Stopwatch.StartNew();
 				var fileName = @"earth.bmp";
 				fileName = @"sample.bmp";
-				//fileName = @"MARBLES.bmp";
+				fileName = @"MARBLES.bmp";
 				//fileName = "Big_Black_River_Railroad_Bridge.bmp";
 				var compressedFileName = fileName + ".compressed." + CompressionQuality;
 				var uncompressedFileName = fileName + ".uncompressed." + CompressionQuality + ".bmp";
@@ -34,29 +34,22 @@ namespace JPEG
 				using (var bmp = (Bitmap) Image.FromStream(fileStream, false, false))
 				{
 					var imageMatrix = (Matrix) bmp;
-					// GC.Collect();
 					sw.Stop();
 					Console.WriteLine($"{bmp.Width}x{bmp.Height} - {fileStream.Length / (1024.0 * 1024):F2} MB " + sw.Elapsed);
 					sw.Restart();
-					// GC.Collect();
 					var compressionResult = Compressor.Compress(imageMatrix, CompressionQuality);
 					imageMatrix = default;
 					GC.Collect();
 					compressionResult.Save(compressedFileName);
-					// GC.Collect();
 				}
 			
 				sw.Stop();
 				Console.WriteLine("Compression: " + sw.Elapsed);
 				sw.Restart();
 				var compressedImage = CompressedImage.Load(compressedFileName);
-				// GC.Collect();
 				var uncompressedImage = Decompressor.Uncompress(compressedImage);
-				// GC.Collect();
 				var resultBmp = (Bitmap) uncompressedImage;
-				// GC.Collect();
 				resultBmp.Save(uncompressedFileName, ImageFormat.Bmp);
-				// GC.Collect();
 				sw.Stop();
 				Console.WriteLine("Decompression: " + sw.Elapsed);
 				Console.WriteLine($"Peak commit size: {MemoryMeter.PeakPrivateBytes() / (1024.0*1024):F2} MB");

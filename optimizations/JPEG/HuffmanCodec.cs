@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,7 +19,7 @@ namespace JPEG
 	{
 		public int Bits { get; set; }
 		public int BitsCount { get; set; }
-
+	
 		public class Comparer : IEqualityComparer<BitsWithLength>
 		{
 			public bool Equals(BitsWithLength x, BitsWithLength y)
@@ -28,7 +29,7 @@ namespace JPEG
 					return false;
 				return x.BitsCount == y.BitsCount && x.Bits == y.Bits;
 			}
-
+	
 			public int GetHashCode(BitsWithLength obj)
 			{
 				if(obj == null)
@@ -155,16 +156,15 @@ namespace JPEG
 		{
 			var nodes = GetNodes(frequences);
 			
-			while(nodes.Count() > 1)
+			while(nodes.Length > 1)
 			{
 				var (f, s) = nodes.TwoMinOrDefault(node => node.Frequency);
-				nodes = nodes.Without(f, s);
-				nodes = nodes.Concat(new HuffmanNode {Frequency = f.Frequency + s.Frequency, Left = s, Right = f }.ToEnumerable());
+				nodes = nodes.Without(f, s).Concat(new HuffmanNode {Frequency = f.Frequency + s.Frequency, Left = s, Right = f }.ToEnumerable()).ToArray();
 			}
 			return nodes.First();
 		}
 
-		private static IEnumerable<HuffmanNode> GetNodes(int[] frequences)
+		private static HuffmanNode[] GetNodes(int[] frequences)
 		{
 			return Enumerable.Range(0, byte.MaxValue + 1)
 				.Select(num => new HuffmanNode {Frequency = frequences[num], LeafLabel = (byte) num})

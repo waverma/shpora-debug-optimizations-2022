@@ -22,10 +22,15 @@ namespace JPEG.Utilities
 			//return enumerable.OrderBy(selector).FirstOrDefault();
 		}
 		
-		public static (T, T) TwoMinOrDefault<T>(this IEnumerable<T> enumerable, Func<T, int> selector)
+		public static unsafe (T, T) TwoMinOrDefault<T>(this T[] enumerable, Func<T, int> selector)
 		{
 			var minimumItem = (Value: default(T),CompareKey: int.MaxValue);
 			var secondMinValue = (Value: default(T),CompareKey: int.MaxValue);
+
+			fixed (int* input = enumerable)
+			{
+				
+			}
 
 			foreach (var item in enumerable)
 			{
@@ -42,10 +47,9 @@ namespace JPEG.Utilities
 			}
 			
 			return (minimumItem.Value, secondMinValue.Value);
-			//return enumerable.OrderBy(selector).FirstOrDefault();
 		}
 
-		public static IEnumerable<T> Without<T>(this IEnumerable<T> enumerable, params T[] elements)
+		public static T[] Without<T>(this T[] enumerable, params T[] elements)
 		{
 			var ignoreFlag = false;
 			

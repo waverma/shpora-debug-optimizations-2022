@@ -18,9 +18,9 @@ namespace JPEG.Images
             G = g;
             B = b;
             
-            Y = 16.0f + 0.256789063f * R + 0.504128906f * G + 0.094f * B;
-            Cb =  128.0f - 0.148222656f * R - 0.290992188f * G + 0.439214844f * B;
-            Cr = 128.0f + 0.439214844f * R - 0.367789063f * G - 0.0714257813f * B;
+            Y = 16.0f + 0.256789063f * r + 0.504128906f * g + 0.094f * b;
+            Cb =  128.0f - 0.148222656f * r - 0.290992188f * g + 0.439214844f * b;
+            Cr = 128.0f + 0.439214844f * r - 0.367789063f * g - 0.0714257813f * b;
         }
         
         public StructPixel(float y, float cb, float cr)
@@ -29,9 +29,9 @@ namespace JPEG.Images
             Cb = cb;
             Cr = cr;
             
-            R = ToByte(1.16438281f * Y + 1.59602734f * Cr - 222.921f);
-            G =  ToByte(1.16438281f * Y - 0.391761719f * Cb - 0.81296875f * Cr + 135.576f);
-            B = ToByte(1.16438281f * Y + 2.01723438f * Cb - 276.836f);
+            R = ToByte(1.16438281f * y + 1.59602734f * cr - 222.921f);
+            G =  ToByte(1.16438281f * y - 0.391761719f * cb - 0.81296875f * cr + 135.576f);
+            B = ToByte(1.16438281f * y + 2.01723438f * cb - 276.836f);
         }
 
         private static byte ToByte(float f)
@@ -39,9 +39,7 @@ namespace JPEG.Images
             var val = (int) f;
             if (val > byte.MaxValue)
                 return byte.MaxValue;
-            if (val < byte.MinValue)
-                return byte.MinValue;
-            return (byte)val;
+            return val < byte.MinValue ? byte.MinValue : (byte)val;
         }
     }
 }
