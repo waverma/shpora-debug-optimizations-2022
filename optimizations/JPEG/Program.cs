@@ -24,8 +24,11 @@ namespace JPEG
 				Console.WriteLine(IntPtr.Size == 8 ? "64-bit version" : "32-bit version");
 				var sw = Stopwatch.StartNew();
 				var fileName = @"earth.bmp";
-				// fileName = @"sample.bmp";
+				fileName = @"sample.bmp";
 				// fileName = @"MARBLES.bmp";
+				Console.WriteLine(args.Length > 0 ? Path.GetFullPath(args[0]) : "");
+				if (args is not null && args.Length > 0 && File.Exists(Path.GetFullPath(args[0])) && Path.GetFullPath(args[0]).Split(".").Last().ToLower() == "bmp")
+					fileName = Path.GetFullPath(args[0]);
 				//fileName = "Big_Black_River_Railroad_Bridge.bmp";
 				var compressedFileName = fileName + ".compressed." + CompressionQuality;
 				var uncompressedFileName = fileName + ".uncompressed." + CompressionQuality + ".bmp";
@@ -37,22 +40,21 @@ namespace JPEG
 					BufferManager.Setup(bmp.Width, bmp.Height, DCTSize);
 					imageMatrix = (Matrix) bmp;
 					sw.Stop();
-					Console.WriteLine($"{bmp.Width}x{bmp.Height} - {fileStream.Length / (1024.0 * 1024):F2} MB " + sw.Elapsed);
+					Console.WriteLine($"{bmp.Width}x{bmp.Height} - {fileStream.Length / (1024.0 * 1024):F2} MB " + sw.Elapsed + $" -----{sw.ElapsedMilliseconds}");
 					sw.Restart();
 					var compressionResult = Compressor.Compress(imageMatrix, CompressionQuality);
 					compressionResult.Save(compressedFileName);
 				}
 			
 				sw.Stop();
-				// BufferManager.Clear();
-				Console.WriteLine("Compression: " + sw.Elapsed);
+				Console.WriteLine("Compression: " + sw.Elapsed + $" -----{sw.ElapsedMilliseconds}");
 				sw.Restart();
 				var compressedImage = CompressedImage.Load(compressedFileName);
 				var uncompressedImage = Decompressor.Uncompress(compressedImage);
 				var resultBmp = (Bitmap) uncompressedImage;
 				resultBmp.Save(uncompressedFileName, ImageFormat.Bmp);
 				sw.Stop();
-				Console.WriteLine("Decompression: " + sw.Elapsed);
+				Console.WriteLine("Decompression: " + sw.Elapsed + $" -----{sw.ElapsedMilliseconds}");
 				Console.WriteLine($"Peak commit size: {MemoryMeter.PeakPrivateBytes() / (1024.0*1024):F2} MB");
 				Console.WriteLine($"Peak working set: {MemoryMeter.PeakWorkingSet() / (1024.0*1024):F2} MB");
 			}
@@ -62,7 +64,7 @@ namespace JPEG
 			}
 		}
 		
-		private static Dictionary<int, int[,]> QuantizationMatrixCache = new();
+		private static readonly Dictionary<int, int[,]> QuantizationMatrixCache = new();
 		public static int[,] GetQuantizationMatrix(int quality)
 		{
 			if(quality < 1 || quality > 99)

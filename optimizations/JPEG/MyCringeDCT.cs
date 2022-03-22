@@ -12,8 +12,8 @@ namespace JPEG
 	    private static float sqrt2 = 1f / (float)Math.Sqrt(2);
 	    private static double piCoef = Math.PI / (2f * height);
 
-	    private static readonly float[,] DCTCosCache = new float[8, 8];
-	    private static readonly float[,] IDCTCosCache = new float[8, 8];
+	    private static readonly float[,] DCTCosCache = new float[height, width];
+	    private static readonly float[,] IDCTCosCache = new float[height, width];
 
 	    public static unsafe void DCT2D(float[,] input, float[,] coeffs)
 	    {
