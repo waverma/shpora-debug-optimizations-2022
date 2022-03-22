@@ -34,24 +34,22 @@ namespace JPEG
 				{
 					var source = new Span<float>(a, 64);
 					var coeffsC = new Span<float>(cc, 64);
-
-					for (byte j = 0; j < height; j++)
+					
+					fixed (float* ic = input)
 					{
-						cosB0 = source[j * 8 + 0];
-						cosB1 = source[j * 8 + 1];
-						cosB2 = source[j * 8 + 2];
-						cosB3 = source[j * 8 + 3];
-						cosB4 = source[j * 8 + 4];
-						cosB5 = source[j * 8 + 5];
-						cosB6 = source[j * 8 + 6];
-						cosB7 = source[j * 8 + 7];
-						sum = 0f;
-
-						fixed (float* ic = input)
+						var inputC = new Span<float>(ic, 64);
+						for (byte j = 0; j < height; j++)
 						{
-							var inputC = new Span<float>(ic, 64);
-
-							sum += inputC[0] * cosA0 * cosB0;
+							cosB0 = source[j * 8 + 0];
+							cosB1 = source[j * 8 + 1];
+							cosB2 = source[j * 8 + 2];
+							cosB3 = source[j * 8 + 3];
+							cosB4 = source[j * 8 + 4];
+							cosB5 = source[j * 8 + 5];
+							cosB6 = source[j * 8 + 6];
+							cosB7 = source[j * 8 + 7];
+							
+							sum = inputC[0] * cosA0 * cosB0;
 							sum += inputC[1] * cosA0 * cosB1;
 							sum += inputC[2] * cosA0 * cosB2;
 							sum += inputC[3] * cosA0 * cosB3;
@@ -149,25 +147,21 @@ namespace JPEG
 				{
 					var source = new Span<float>(a, 64);
 					var outputC = new Span<float>(oc, 64);
-					
-					for (byte j = 0; j < height; j++)
+					fixed (float* c = coeffs)
 					{
-						sum = 0f;
-						cosB0 = source[j * 8 + 0];
-						cosB1 = source[j * 8 + 1];
-						cosB2 = source[j * 8 + 2];
-						cosB3 = source[j * 8 + 3];
-						cosB4 = source[j * 8 + 4];
-						cosB5 = source[j * 8 + 5];
-						cosB6 = source[j * 8 + 6];
-						cosB7 = source[j * 8 + 7];
-
-						
-						fixed (float* c = coeffs)
+						var coeffsC = new Span<float>(c, 64);
+						for (byte j = 0; j < height; j++)
 						{
-							var coeffsC = new Span<float>(c, 64);
+							cosB0 = source[j * 8 + 0];
+							cosB1 = source[j * 8 + 1];
+							cosB2 = source[j * 8 + 2];
+							cosB3 = source[j * 8 + 3];
+							cosB4 = source[j * 8 + 4];
+							cosB5 = source[j * 8 + 5];
+							cosB6 = source[j * 8 + 6];
+							cosB7 = source[j * 8 + 7];
 
-							sum += coeffsC[0] * cosA0 * cosB0 * sqrt2;
+							sum = coeffsC[0] * cosA0 * cosB0 * sqrt2;
 							sum += coeffsC[8] * cosA1 * cosB0; 
 							sum += coeffsC[16] * cosA2 * cosB0;
 							sum += coeffsC[24] * cosA3 * cosB0;
